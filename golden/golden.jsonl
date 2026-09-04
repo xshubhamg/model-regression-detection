@@ -16,7 +16,7 @@
 {"expected_summary_contains": ["account", "profile"], "expected_tag": "account", "id": "a4", "input": "Please delete my account and all profile data under GDPR.", "notes": "deletion request", "version": "1"}
 {"expected_summary_contains": ["profile"], "expected_tag": "account", "id": "a5", "input": "Where do I update my profile name and notification preferences?", "notes": "profile update", "version": "1"}
 {"expected_summary_contains": ["subscription"], "expected_tag": "account", "id": "a6", "input": "My subscription renews tomorrow \u2014 can I pause it for two months instead?", "notes": "pause subscription", "version": "1"}
-{"expected_summary_contains": ["pricing"], "expected_tag": "general", "id": "g1", "input": "Hello, quick question about your pricing page \u2014 do you offer discounts for nonprofits?", "notes": "general inquiry", "version": "1"}
+{"expected_summary_contains": ["discount", "nonprofit"], "expected_tag": "general", "id": "g1", "input": "Hello, quick question about your pricing page \u2014 do you offer discounts for nonprofits?", "notes": "general inquiry", "version": "1"}
 {"expected_summary_contains": ["dashboard"], "expected_tag": "general", "id": "g2", "input": "Just wanted to say I love the new dashboard. Great work from the team!", "notes": "positive feedback", "version": "1"}
 {"expected_summary_contains": ["support"], "expected_tag": "general", "id": "g3", "input": "Hello? Is anyone there? Testing if this email reaches support.", "notes": "connectivity check", "version": "1"}
 {"expected_summary_contains": ["office", "hours"], "expected_tag": "general", "id": "g4", "input": "What are your support office hours over the holidays?", "notes": "hours question", "version": "1"}
