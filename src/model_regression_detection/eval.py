@@ -10,7 +10,7 @@ import sqlite3
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from model_regression_detection.classifier import classify_email
+from model_regression_detection.classifier import classify_email, judge_summary
 
 ROOT = Path(__file__).resolve().parents[2]
 GOLDEN_PATH = ROOT / "golden" / "golden.jsonl"
@@ -32,6 +32,8 @@ class CaseScore:
     expected_summary_contains: list
     predicted_summary: str
     notes: str
+    mocked: bool = False
+    summary_method: str = "keyword"
 
 
 def score_case(
@@ -62,9 +64,25 @@ def load_golden(path: Path = GOLDEN_PATH) -> list[dict]:
 
 def _run_one(row: dict, prompt_version: str, model: str | None) -> CaseScore:
     out = classify_email(row["input"], prompt_version=prompt_version, model=model)
-    cat_ok, sum_ok = score_case(
-        row["expected_tag"], out.category, out.summary, row.get("expected_summary_contains", [])
-    )
+    must_convey = row.get("expected_summary_contains", [])
+    cat_ok = row["expected_tag"].strip().lower() == out.category.strip().lower()
+    if out.mocked:
+        # No key: cheap deterministic keyword check keeps tests + CI free.
+        _, sum_ok = score_case(row["expected_tag"], out.category, out.summary, must_convey)
+        method = "keyword"
+    elif not must_convey:
+        # Category-only case (e.g. sarcasm): nothing to judge, no LLM call spent.
+        sum_ok = True
+        method = "category-only"
+    else:
+        try:
+            sum_ok = judge_summary(
+                row["input"], row["expected_tag"], must_convey, out.summary, model=model
+            )
+            method = "judge"
+        except Exception:  # noqa: BLE001 — judge is best-effort; any failure falls back
+            _, sum_ok = score_case(row["expected_tag"], out.category, out.summary, must_convey)
+            method = "keyword-fallback"
     return CaseScore(
         id=row["id"],
         expected_tag=row["expected_tag"],
@@ -77,9 +95,11 @@ def _run_one(row: dict, prompt_version: str, model: str | None) -> CaseScore:
         completion_tokens=out.completion_tokens,
         model=out.model,
         prompt_version=out.prompt_version,
-        expected_summary_contains=row.get("expected_summary_contains", []),
+        expected_summary_contains=must_convey,
         predicted_summary=out.summary,
         notes=row.get("notes", ""),
+        mocked=out.mocked,
+        summary_method=method,
     )
 
 
@@ -222,7 +242,8 @@ def main() -> int:
     write_report(result)
     payload = build_payload(result)
     Path("slack_payload.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    maybe_post(payload)
+    mocked_run = all(s.get("mocked", False) for s in result["scores"])
+    maybe_post(payload, mocked=mocked_run)
     return 2 if result["regression"] else 0
 
 
