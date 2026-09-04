@@ -93,7 +93,7 @@ def classify_email(
     import os
 
     prompt = load_prompt(prompt_version)
-    model = model or os.getenv("LLM_MODEL", "openai/gpt-4o-mini")
+    model = model or os.getenv("LLM_MODEL", "z-ai/glm-5.3-flash")
     api_key = api_key if api_key is not None else os.getenv("LLM_API_KEY", "")
     base_url = base_url or os.getenv("LLM_BASE_URL", "https://openrouter.ai/api/v1")
 

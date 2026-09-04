@@ -1,5 +1,5 @@
 id: v1
 sha256: auto-computed-at-runtime
 description: Initial classifier prompt — strict literal categories, one-sentence summary.
-model_default: openai/gpt-4o-mini
+model_default: z-ai/glm-5.3-flash
 temperature: 0

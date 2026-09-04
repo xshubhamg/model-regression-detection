@@ -107,7 +107,7 @@ def run_eval(
 ) -> dict:
     import os
 
-    model = model or os.getenv("LLM_MODEL", "openai/gpt-4o-mini")
+    model = model or os.getenv("LLM_MODEL", "z-ai/glm-5.3-flash")
     db_path = db_path or Path(os.getenv("RESULTS_DB", str(ROOT / "results.db")))
     baseline_path = baseline_path or (ROOT / "baseline.json")
 

@@ -28,7 +28,7 @@ Env: `PASS_THRESHOLD=0.90`, `MAX_DROP_VS_BASELINE=0.05`. Regression if `pass_rat
 
 ## Swap model (no code change)
 ```bash
-LLM_BASE_URL=https://openrouter.ai/api/v1 LLM_MODEL=openai/gpt-4o-mini
+LLM_BASE_URL=https://openrouter.ai/api/v1 LLM_MODEL=z-ai/glm-5.3-flash
 # swap models with one var, e.g. LLM_MODEL=deepseek/deepseek-chat
 ```
 

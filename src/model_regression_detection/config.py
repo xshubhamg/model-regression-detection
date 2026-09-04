@@ -18,7 +18,7 @@ load_dotenv()
 class Settings:
     llm_base_url: str = os.getenv("LLM_BASE_URL", "https://openrouter.ai/api/v1")
     llm_api_key: str = os.getenv("LLM_API_KEY", "")
-    llm_model: str = os.getenv("LLM_MODEL", "openai/gpt-4o-mini")
+    llm_model: str = os.getenv("LLM_MODEL", "z-ai/glm-5.3-flash")
     prompt_version: str = os.getenv("PROMPT_VERSION", "v1")
     temperature: float = float(os.getenv("LLM_TEMPERATURE", "0"))
     slack_webhook_url: str = os.getenv("SLACK_WEBHOOK_URL", "")
