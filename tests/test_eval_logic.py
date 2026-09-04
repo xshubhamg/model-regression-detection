@@ -19,3 +19,13 @@ def test_regression_rule():
     assert is_regression(0.80, None) is True  # below 90% with no baseline
     assert is_regression(0.97, 1.0) is False
     assert is_regression(0.96, 0.97) is False
+
+
+def test_regression_boundaries():
+    from model_regression_detection.eval import is_regression
+
+    assert is_regression(0.90, None) is False  # exactly at threshold passes
+    assert is_regression(0.899, None) is True  # a hair under fires
+    assert is_regression(0.90, 1.0) is True  # 10% drop fires even at threshold
+    assert is_regression(0.96, 1.0) is False  # 4% dip tolerated
+    assert is_regression(0.95, 0.96) is False  # 1% dip above threshold tolerated

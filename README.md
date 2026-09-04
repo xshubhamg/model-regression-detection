@@ -3,7 +3,7 @@
 CI/CD-style pipeline that tests any LLM feature against a golden dataset whenever the prompt or model changes, detects quality regressions, and alerts via Slack before bad outputs ship.
 
 ## Why this matters
-Eval quality is bounded by data quality. This repo versions prompts like code, hand-labels a golden set with edge cases (typos, sarcasm, mixed-language, multi-intent), and blocks regressions statistically — the workflow hiring teams use post-deploy.
+Eval quality is bounded by data quality. This repo versions prompts like code, hand-labels a 75-case golden set with 20 edge cases (typos, sarcasm, Hinglish, prompt injection, emoji, multi-intent, forwarded threads), and blocks regressions statistically — the workflow hiring teams use post-deploy.
 
 ## Quickstart
 ```bash
