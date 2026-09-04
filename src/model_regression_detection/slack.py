@@ -37,8 +37,11 @@ def build_payload(result: dict) -> dict:
     }
 
 
-def maybe_post(payload: dict) -> bool:
+def maybe_post(payload: dict, mocked: bool = False) -> bool:
     url = os.getenv("SLACK_WEBHOOK_URL", "")
+    if mocked:
+        print("mocked run — skipping Slack post, payload in slack_payload.json.")
+        return False
     if not url:
         print("SLACK_WEBHOOK_URL not set — wrote slack_payload.json only.")
         return False

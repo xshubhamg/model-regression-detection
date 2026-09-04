@@ -32,10 +32,13 @@ LLM_BASE_URL=https://openrouter.ai/api/v1 LLM_MODEL=z-ai/glm-5.3-flash
 # swap models with one var, e.g. LLM_MODEL=deepseek/deepseek-chat
 ```
 
+## How summary scoring works
+Categories use exact match (deterministic). Summaries use **LLM-as-judge** on live runs: the model checks whether the summary conveys the case's key points, so paraphrase ("deletion" vs "delete") passes. Without an API key, mock runs fall back to keyword-contains (free, deterministic) — mocks prove plumbing, only live runs prove quality. Empty key-point lists (e.g. sarcasm) are category-only checks with no judge call spent.
+
 ## Slack
-Set `SLACK_WEBHOOK_URL` to post; otherwise `slack_payload.json` is written for inspection.
+Set `SLACK_WEBHOOK_URL` to post; otherwise `slack_payload.json` is written for inspection. Mocked runs never post (no channel spam from keyless CI).
 
 ## Architecture decisions
-- Custom scorer (exact category + summary contains) over RAGAS/DeepEval today: deterministic, $0, no network.
+- Custom scorer (exact category + LLM-judge summaries) over RAGAS/DeepEval: paraphrase-robust, one stack, judge falls back to keywords on errors.
 - `golden.jsonl` human-editable + mirrored to SQLite `runs`/`results` for history.
 - `v2-degraded.txt` intentionally vague to demo a caught regression in CI.

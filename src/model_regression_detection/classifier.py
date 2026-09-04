@@ -159,3 +159,74 @@ def classify_email(
         completion_tokens=getattr(usage, "completion_tokens", 0) or 0,
         mocked=False,
     )
+
+
+class JudgeVerdict(BaseModel):
+    verdict: Literal["pass", "fail"]
+
+
+JUDGE_SYSTEM = (
+    "You judge email-summary quality. Given the original email, the expected category, "
+    "and key points a good summary must convey, decide whether the candidate summary "
+    "conveys them. Paraphrase is fine; missing or contradictory key points fail. "
+    'Output JSON only: {"verdict": "pass"|"fail"}.'
+)
+
+
+def judge_summary(
+    email_text: str,
+    expected_tag: str,
+    must_convey: list[str],
+    candidate_summary: str,
+    model: str | None = None,
+    api_key: str | None = None,
+    base_url: str | None = None,
+) -> bool:
+    """LLM-as-judge for summaries. True = summary conveys the key points.
+
+    Empty must_convey means category-only check (no LLM call). Raises when no
+    API key is configured — callers fall back to keyword matching in mock mode.
+    """
+    import os
+
+    if not must_convey:
+        return True
+    model = model or os.getenv("LLM_MODEL", "z-ai/glm-5.3-flash")
+    api_key = api_key if api_key is not None else os.getenv("LLM_API_KEY", "")
+    base_url = base_url or os.getenv("LLM_BASE_URL", "https://openrouter.ai/api/v1")
+    if not api_key:
+        raise RuntimeError("judge_summary needs LLM_API_KEY; use keyword scoring in mock mode")
+
+    from openai import OpenAI
+
+    client = OpenAI(api_key=api_key, base_url=base_url)
+    resp = client.chat.completions.create(
+        model=model,
+        temperature=0,
+        messages=[
+            {"role": "system", "content": JUDGE_SYSTEM},
+            {
+                "role": "user",
+                "content": (
+                    f"Email:\n{email_text}\n\nExpected category: {expected_tag}\n"
+                    f"Key points the summary must convey: {', '.join(must_convey)}\n"
+                    f"Candidate summary:\n{candidate_summary}"
+                ),
+            },
+        ],
+        response_format={
+            "type": "json_schema",
+            "json_schema": {
+                "name": "summary_judgment",
+                "strict": True,
+                "schema": {
+                    "type": "object",
+                    "properties": {"verdict": {"type": "string", "enum": ["pass", "fail"]}},
+                    "required": ["verdict"],
+                    "additionalProperties": False,
+                },
+            },
+        },
+    )
+    raw = resp.choices[0].message.content or "{}"
+    return JudgeVerdict.model_validate(json.loads(raw)).verdict == "pass"
