@@ -19,6 +19,15 @@ def build_payload(result: dict) -> dict:
         or "None — all cases passed."
     )
     base = f"{result['baseline']:.1%}" if result["baseline"] is not None else "n/a"
+    if result.get("moving_avg") is None:
+        drift = (
+            f"Warming up ({result.get('drift_runs', 0)}/{result.get('drift_window', 7)} live runs)"
+        )
+    else:
+        drift = (
+            f"{'DRIFT DETECTED' if result.get('drift') else 'No drift'} "
+            f"({result.get('drift_window', 7)}-run avg={result['moving_avg']:.1%})"
+        )
     return {
         "text": f"{status} — {result['prompt_version']}/{result['model']}: "
         f"{result['passed']}/{result['total']} = {result['pass_rate']:.1%} (baseline {base})",
@@ -30,6 +39,7 @@ def build_payload(result: dict) -> dict:
                     "type": "mrkdwn",
                     "text": f"*Prompt:* `{result['prompt_version']}`\n*Model:* `{result['model']}`\n"
                     f"*Score:* {result['passed']}/{result['total']} = {result['pass_rate']:.1%} (baseline {base})\n"
+                    f"*Drift:* {drift}\n"
                     f"*Flips ({len(result['flipped'])}):*\n{flips}",
                 },
             },
