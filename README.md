@@ -26,11 +26,10 @@ Append JSONL to `golden/golden.jsonl`:
 ## How to tune thresholds
 Env: `PASS_THRESHOLD=0.90`, `MAX_DROP_VS_BASELINE=0.05`. Regression if `pass_rate < threshold OR (baseline - pass_rate) > max_drop`.
 
-## Swap model/provider (no code change)
+## Swap model (no code change)
 ```bash
 LLM_BASE_URL=https://openrouter.ai/api/v1 LLM_MODEL=openai/gpt-4o-mini
-# CommandCode Provider API needs Provider plan+ (Go plan gets 403 on chat):
-LLM_BASE_URL=https://api.commandcode.ai/provider/v1 LLM_MODEL=deepseek/deepseek-v4-flash
+# swap models with one var, e.g. LLM_MODEL=deepseek/deepseek-chat
 ```
 
 ## Slack

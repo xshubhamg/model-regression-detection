@@ -1,9 +1,7 @@
 """Central settings — provider-agnostic via env vars.
 
-Swap providers without code changes:
-  OpenRouter:  LLM_BASE_URL=https://openrouter.ai/api/v1  LLM_MODEL=openai/gpt-4o-mini
-  CommandCode: LLM_BASE_URL=<commandcode-url>              LLM_MODEL=deepseek/deepseek-v4-flash
-  Vercel:      LLM_BASE_URL=<vercel-gateway-url>            LLM_MODEL=openai/gpt-4o-mini
+Point LLM_BASE_URL at any OpenAI-compatible endpoint and swap models
+via LLM_MODEL without code changes. Primary: OpenRouter.
 """
 
 from __future__ import annotations
