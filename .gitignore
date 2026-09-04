@@ -1,0 +1,20 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Local secrets + run artifacts (keep repo presentable)
+.env
+results.db
+last_run.json
+slack_payload.json
+report.html
+baseline.json
+__pycache__/
+
