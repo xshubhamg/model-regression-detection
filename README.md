@@ -41,6 +41,9 @@ Categories use exact match (deterministic). Summaries use **LLM-as-judge** on li
 ## Slack
 Set `SLACK_WEBHOOK_URL` to post; otherwise `slack_payload.json` is written for inspection. Mocked runs never post (no channel spam from keyless CI).
 
+## Live CI
+`LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` are repo secrets, so Actions runs the real model on every push/PR (plus manual `workflow_dispatch`). The Slack webhook is deliberately *not* a secret — CI uploads `slack_payload.json` as an artifact instead of posting. Reports land under the run's `regression-report` artifact.
+
 ## Architecture decisions
 - Custom scorer (exact category + LLM-judge summaries) over RAGAS/DeepEval: paraphrase-robust, one stack, judge falls back to keywords on errors.
 - `golden.jsonl` human-editable + mirrored to SQLite `runs`/`results` for history.
