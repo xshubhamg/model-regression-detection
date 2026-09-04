@@ -29,7 +29,8 @@ Env: `PASS_THRESHOLD=0.90`, `MAX_DROP_VS_BASELINE=0.05`. Regression if `pass_rat
 ## Swap model/provider (no code change)
 ```bash
 LLM_BASE_URL=https://openrouter.ai/api/v1 LLM_MODEL=openai/gpt-4o-mini
-LLM_BASE_URL=<commandcode-url> LLM_MODEL=deepseek/deepseek-v4-flash
+# CommandCode Provider API needs Provider plan+ (Go plan gets 403 on chat):
+LLM_BASE_URL=https://api.commandcode.ai/provider/v1 LLM_MODEL=deepseek/deepseek-v4-flash
 ```
 
 ## Slack
