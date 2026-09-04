@@ -44,6 +44,12 @@ Set `SLACK_WEBHOOK_URL` to post; otherwise `slack_payload.json` is written for i
 ## Live CI
 `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` are repo secrets, so Actions runs the real model on every push/PR (plus manual `workflow_dispatch`). The Slack webhook is deliberately *not* a secret — CI uploads `slack_payload.json` as an artifact instead of posting. Reports land under the run's `regression-report` artifact.
 
+## Dashboard (observability)
+```bash
+uv run streamlit run dashboard.py   # -> http://localhost:8501
+```
+Four tabs over the local `results.db` + `last_run.json`: score trend with drift status, latest-run detail (categories, flips, latency outliers), the golden set, and a pipeline explainer. Streamlit is a dev-only dependency, so Docker/CI stay slim.
+
 ## Architecture decisions
 - Custom scorer (exact category + LLM-judge summaries) over RAGAS/DeepEval: paraphrase-robust, one stack, judge falls back to keywords on errors.
 - `golden.jsonl` human-editable + mirrored to SQLite `runs`/`results` for history.
