@@ -21,6 +21,14 @@ def write_report(result: dict, out: Path | None = None) -> Path:
     status = "REGRESSION DETECTED" if result["regression"] else "PASS — no regression"
     color = "#b3261e" if result["regression"] else "#146c2e"
     base = f"{result['baseline']:.1%}" if result["baseline"] is not None else "n/a"
+    if result.get("moving_avg") is None:
+        drift_line = f"Drift: warming up ({result.get('drift_runs', 0)}/{result.get('drift_window', 7)} live runs)"
+    else:
+        drift_state = "DRIFT DETECTED" if result.get("drift") else "no drift"
+        drift_line = (
+            f"Drift: {drift_state} "
+            f"({result.get('drift_window', 7)}-run avg={result['moving_avg']:.1%})"
+        )
     page = f"""<!doctype html><html><head><meta charset="utf-8">
 <title>Model Regression Report — {html.escape(result["prompt_version"])}</title>
 <style>body{{font-family:system-ui,sans-serif;max-width:960px;margin:2rem auto;padding:0 1rem}}
@@ -31,6 +39,7 @@ table{{border-collapse:collapse;width:100%;margin-top:1rem}}td,th{{border:1px so
 <div class="banner">{status}</div>
 <p>prompt <b>{html.escape(result["prompt_version"])}</b> · model <b>{html.escape(result["model"])}</b> · {html.escape(result["ts"])}</p>
 <p>score <b>{result["passed"]}/{result["total"]} = {result["pass_rate"]:.1%}</b> · baseline {base} · avg latency {result["avg_latency_ms"]:.0f}ms</p>
+<p>{drift_line}</p>
 <h3>By category</h3><ul>{cats}</ul>
 <h3>All cases</h3><table><tr><th>id</th><th>expected</th><th>predicted</th><th>verdict</th><th>summary</th><th>latency</th></tr>{rows}</table>
 </body></html>"""

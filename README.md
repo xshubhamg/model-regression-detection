@@ -26,6 +26,9 @@ Append JSONL to `golden/golden.jsonl`:
 ## How to tune thresholds
 Env: `PASS_THRESHOLD=0.90`, `MAX_DROP_VS_BASELINE=0.05`. Regression if `pass_rate < threshold OR (baseline - pass_rate) > max_drop`.
 
+## Slow-drift detection
+Beyond per-run gates, the pipeline tracks a moving average over the last `DRIFT_WINDOW=7` **live** runs (mocked runs excluded) from SQLite. If the average drops below `DRIFT_THRESHOLD=0.90`, the run is flagged `drift`, appears in `report.html` and Slack, and fails CI (exit 2) — catching gradual decay no single run would trip. Fewer than 7 live runs reports "warming up".
+
 ## Swap model (no code change)
 ```bash
 LLM_BASE_URL=https://openrouter.ai/api/v1 LLM_MODEL=z-ai/glm-5.3-flash

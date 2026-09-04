@@ -108,14 +108,35 @@ def init_db(db_path: Path) -> sqlite3.Connection:
     conn.execute(
         """CREATE TABLE IF NOT EXISTS runs(
         id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, prompt_version TEXT,
-        model TEXT, pass_rate REAL, total INTEGER, passed INTEGER, regression INTEGER)"""
+        model TEXT, pass_rate REAL, total INTEGER, passed INTEGER, regression INTEGER,
+        mocked INTEGER DEFAULT 0)"""
     )
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(runs)").fetchall()]
+    if "mocked" not in cols:  # migrate DBs created before the mocked flag existed
+        conn.execute("ALTER TABLE runs ADD COLUMN mocked INTEGER DEFAULT 0")
     conn.execute(
         """CREATE TABLE IF NOT EXISTS results(
         run_id INTEGER, case_id TEXT, expected TEXT, predicted TEXT,
         passed INTEGER, latency_ms INTEGER, summary TEXT)"""
     )
     return conn
+
+
+def recent_live_rates(conn: sqlite3.Connection, limit: int) -> list[float]:
+    cur = conn.execute(
+        "SELECT pass_rate FROM runs WHERE mocked = 0 ORDER BY id DESC LIMIT ?", (limit,)
+    )
+    return [r[0] for r in cur.fetchall()]
+
+
+def drift_status(
+    rates: list[float], window: int, threshold: float
+) -> tuple[bool, float | None, int]:
+    """(drift, moving_avg, runs_in_window). Warming up until the window is full."""
+    if len(rates) < window:
+        return False, None, len(rates)
+    avg = sum(rates[:window]) / window
+    return avg < threshold, avg, window
 
 
 def run_eval(
@@ -163,10 +184,13 @@ def run_eval(
     )
 
     ts = dt.datetime.now(dt.UTC).isoformat()
+    mocked_run = all(s.mocked for s in scores)
+    drift_window = int(_os.getenv("DRIFT_WINDOW", "7"))
+    drift_threshold = float(_os.getenv("DRIFT_THRESHOLD", "0.90"))
     conn = init_db(db_path)
     cur = conn.execute(
-        "INSERT INTO runs(ts,prompt_version,model,pass_rate,total,passed,regression) VALUES(?,?,?,?,?,?,?)",
-        (ts, prompt_version, model, pass_rate, total, passed, int(regression)),
+        "INSERT INTO runs(ts,prompt_version,model,pass_rate,total,passed,regression,mocked) VALUES(?,?,?,?,?,?,?,?)",
+        (ts, prompt_version, model, pass_rate, total, passed, int(regression), int(mocked_run)),
     )
     run_id = cur.lastrowid or 0
     for s in scores:
@@ -183,6 +207,8 @@ def run_eval(
             ),
         )
     conn.commit()
+    rates = recent_live_rates(conn, drift_window)
+    drift, moving_avg, window_n = drift_status(rates, drift_window, drift_threshold)
     conn.close()
 
     return {
@@ -197,6 +223,11 @@ def run_eval(
         "by_category": by_cat,
         "baseline": baseline,
         "regression": regression,
+        "drift": drift,
+        "moving_avg": moving_avg,
+        "drift_window": drift_window,
+        "drift_runs": window_n,
+        "mocked_run": mocked_run,
         "flipped": [asdict(s) for s in flipped],
         "scores": [asdict(s) for s in scores],
     }
@@ -212,10 +243,14 @@ def main() -> int:
 
     result = run_eval(prompt_version=args.prompt, model=args.model)
     Path(args.json_out).write_text(json.dumps(result, indent=2), encoding="utf-8")
+    if result["moving_avg"] is None:
+        drift_msg = f"drift warming up ({result['drift_runs']}/{result['drift_window']} live runs)"
+    else:
+        drift_msg = f"drift {'DETECTED' if result['drift'] else 'ok'} ({result['drift_window']}-run avg={result['moving_avg']:.1%})"
     print(
         f"[{result['prompt_version']}/{result['model']}] "
         f"pass {result['passed']}/{result['total']} = {result['pass_rate']:.1%} "
-        f"(baseline={result['baseline']}) regression={result['regression']}"
+        f"(baseline={result['baseline']}) regression={result['regression']} | {drift_msg}"
     )
     for f in result["flipped"]:
         print(
@@ -242,9 +277,8 @@ def main() -> int:
     write_report(result)
     payload = build_payload(result)
     Path("slack_payload.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    mocked_run = all(s.get("mocked", False) for s in result["scores"])
-    maybe_post(payload, mocked=mocked_run)
-    return 2 if result["regression"] else 0
+    maybe_post(payload, mocked=result["mocked_run"])
+    return 2 if result["regression"] or result["drift"] else 0
 
 
 if __name__ == "__main__":
